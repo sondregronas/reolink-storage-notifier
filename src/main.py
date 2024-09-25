@@ -20,7 +20,6 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
 SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 SMTP_FROM = os.getenv("SMTP_FROM", "")
-SMTP_TO = os.getenv("SMTP_TO", "").split(",")
 
 
 def get_email_subscribers():
