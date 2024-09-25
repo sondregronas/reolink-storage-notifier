@@ -1,0 +1,9 @@
+services:
+  reolink_notifier:
+    build: .
+    container_name: reolink-email-notifier
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
