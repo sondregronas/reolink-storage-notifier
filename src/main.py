@@ -65,10 +65,7 @@ class HddData:
 
     @property
     def percentage(self):
-        return (
-            100
-            - ((self.available_space - self.used_space) / self.available_space) * 100
-        )
+        return 100 - ((self.available_space - self.used_space) / self.available_space) * 100
 
 
 def send_email(hdd_data, level: Level):
@@ -77,15 +74,16 @@ def send_email(hdd_data, level: Level):
         smtp.ehlo()
         smtp.starttls()
         smtp.login(SMTP_USERNAME, SMTP_PASSWORD)
+        message = f"Subject: [Reolink Camera] {hdd_data.name}: Storage level is "
         for email in get_email_subscribers():
             if level == Level.OKAY:
-                message = f"Subject: [Reolink Camera] {hdd_data.name} : Storage level is healthy again\n\n Status: {hdd_data}"
+                message += f"healthy again\n\n Status: {hdd_data}"
             elif level == Level.WARNING:
-                message = f"Subject: [Reolink Camera] {hdd_data.name}: Storage level is getting low\n\n Status: {hdd_data}"
+                message += f"getting low\n\n Status: {hdd_data}"
             elif level == Level.CRITICAL:
-                message = f"Subject: [Reolink Camera] {hdd_data.name}: Storage level is getting critical\n\n Status: {hdd_data}"
+                message += f"critical\n\n Status: {hdd_data}"
             else:
-                message = f"Subject: [Reolink Camera] {hdd_data.name}: Storage level is unknown\n\n Something went wrong"
+                message += "unknown\n\n Something went wrong, this is not supposed to happen"
             smtp.sendmail(SMTP_FROM, email, message)
         smtp.quit()
     except Exception as e:
@@ -123,16 +121,10 @@ def update_reolink_cameras():
         if float(current_status.get(hdd_data.name, 0)) < WARNING <= hdd_data.percentage:
             send_email(hdd_data, Level.WARNING)
         # If the percentage is higher than the critical threshold, but only if the status was previously okay or warning
-        elif (
-            float(current_status.get(hdd_data.name, 0))
-            < CRITICAL
-            <= hdd_data.percentage
-        ):
+        elif float(current_status.get(hdd_data.name, 0)) < CRITICAL <= hdd_data.percentage:
             send_email(hdd_data, Level.CRITICAL)
         # If the percentage is lower than the warning threshold, but the status was previously critical
-        elif (
-            float(current_status.get(hdd_data.name, 0)) >= WARNING > hdd_data.percentage
-        ):
+        elif float(current_status.get(hdd_data.name, 0)) >= WARNING > hdd_data.percentage:
             send_email(hdd_data, Level.OKAY)
 
         current_status[hdd_data.name] = hdd_data.percentage
@@ -150,9 +142,7 @@ def create_if_not_exists(path, content="", directory=False):
 
 
 create_if_not_exists("data", directory=True)
-create_if_not_exists(
-    "data/cameras.txt", "# Enter one camera address per line (http(s)://ip:port)"
-)
+create_if_not_exists("data/cameras.txt", "# Enter one camera host per line (http(s)://ip:port)")
 create_if_not_exists("data/emails.txt", "# Enter one email address per line")
 create_if_not_exists("data/status.json", "{}")
 
@@ -160,14 +150,15 @@ create_if_not_exists("data/status.json", "{}")
 def loop():
     try:
         update_reolink_cameras()
-        time.sleep(600)
-        loop()
     except KeyboardInterrupt:
         print("Exiting...")
+        os._exit(0)
     except Exception as e:
         print(f"Error: {e}")
-        time.sleep(600)
-        loop()
+
+    # Sleep for 4 hours
+    time.sleep(60 * 60 * 4)
+    loop()
 
 
 if __name__ == "__main__":
