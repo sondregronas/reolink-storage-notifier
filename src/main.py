@@ -158,7 +158,7 @@ def loop():
         os._exit(0)
     except Exception as e:
         print(f"Unknown error: {e}")
-
+    print("Done. Going back to sleep")
     # Sleep for 4 hours
     time.sleep(60 * 60 * 4)
     loop()
