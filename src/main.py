@@ -87,7 +87,7 @@ def send_email(hdd_data, level: Level):
             smtp.sendmail(SMTP_FROM, email, message)
         smtp.quit()
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error sending email: {e}")
 
 
 def get_dev_name(camera_address):
@@ -98,7 +98,7 @@ def get_dev_name(camera_address):
 
 def get_hdd_data(camera_address):
     url = f"{camera_address}/api.cgi?cmd=GetHddInfo&user={REOLINK_USERNAME}&password={REOLINK_PASSWORD}"
-    response = requests.get(url)
+    response = requests.get(url, timeout=10)
     capacity = response.json()[0]["value"]["HddInfo"][0]["capacity"]
     size = response.json()[0]["value"]["HddInfo"][0]["size"]
     return HddData(
@@ -112,11 +112,13 @@ def update_reolink_cameras():
     with open("data/status.json", "r") as f:
         current_status = json.load(f)
     for camera_address in get_camera_addresses():
+        print(f"Getting {camera_address} HDD data")
         try:
             hdd_data = get_hdd_data(camera_address)
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Error getting {camera_address}")
             continue
+        print(f"Done")
         # If the percentage is higher than the warning threshold, but only if the status was previously okay
         if float(current_status.get(hdd_data.name, 0)) < WARNING <= hdd_data.percentage:
             send_email(hdd_data, Level.WARNING)
@@ -148,13 +150,14 @@ create_if_not_exists("data/status.json", "{}")
 
 
 def loop():
+    print("Checking reolink cameras...")
     try:
         update_reolink_cameras()
     except KeyboardInterrupt:
         print("Exiting...")
         os._exit(0)
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Unknown error: {e}")
 
     # Sleep for 4 hours
     time.sleep(60 * 60 * 4)
