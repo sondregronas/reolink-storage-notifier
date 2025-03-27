@@ -2,8 +2,11 @@ services:
   reolink_notifier:
     build: .
     container_name: reolink-email-notifier
+    network_mode: host
     env_file:
       - .env
+    environment:
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./data:/app/data
     restart: unless-stopped
